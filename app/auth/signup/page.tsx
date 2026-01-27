@@ -43,10 +43,18 @@ export default function SignupPage() {
           data: {
             full_name: formData.fullName,
           },
+          emailRedirectTo: `${window.location.origin}/dashboard`,
         },
       })
 
-      if (authError) throw authError
+      if (authError) {
+        // Handle rate limit error specifically
+        if (authError.message.includes('rate limit') || authError.message.includes('Email rate limit exceeded')) {
+          toast.error('Too many signup attempts. Please try again in a few minutes, or disable email confirmation in Supabase settings for development.')
+          return
+        }
+        throw authError
+      }
 
       if (authData.user) {
         // Create profile
@@ -60,13 +68,25 @@ export default function SignupPage() {
             phone: formData.phone || null,
           })
 
-        if (profileError) throw profileError
+        if (profileError) {
+          // Ignore duplicate profile error (user might exist from auth but profile insert failed before)
+          if (!profileError.message.includes('duplicate') && !profileError.message.includes('already exists')) {
+            throw profileError
+          }
+        }
 
-        toast.success('Account created successfully!')
-        router.push('/dashboard')
-        router.refresh()
+        // Check if email confirmation is required
+        if (authData.session) {
+          toast.success('Account created successfully!')
+          router.push('/dashboard')
+          router.refresh()
+        } else {
+          toast.success('Account created! Please check your email to confirm your account.', { duration: 5000 })
+          // Stay on signup page or redirect to a "check email" page
+        }
       }
     } catch (error: any) {
+      console.error('Signup error:', error)
       toast.error(error.message || 'Failed to create account')
     } finally {
       setLoading(false)
@@ -87,7 +107,7 @@ export default function SignupPage() {
         <form className="mt-8 space-y-4" onSubmit={handleSignup}>
           <div>
             <label htmlFor="fullName" className="block text-sm font-medium text-gray-700">
-              Full Name *
+              Full Name <span className="text-red-500">*</span>
             </label>
             <input
               id="fullName"
@@ -96,14 +116,14 @@ export default function SignupPage() {
               required
               value={formData.fullName}
               onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
-              className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-purple-500 focus:border-purple-500"
+              className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-purple-500 focus:border-purple-500 text-gray-900 placeholder:text-gray-400"
               placeholder="John Doe"
             />
           </div>
 
           <div>
             <label htmlFor="email" className="block text-sm font-medium text-gray-700">
-              Email address *
+              Email address <span className="text-red-500">*</span>
             </label>
             <input
               id="email"
@@ -112,14 +132,14 @@ export default function SignupPage() {
               required
               value={formData.email}
               onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-              className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-purple-500 focus:border-purple-500"
+              className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-purple-500 focus:border-purple-500 text-gray-900 placeholder:text-gray-400"
               placeholder="your.email@example.com"
             />
           </div>
 
           <div>
             <label htmlFor="ieeeId" className="block text-sm font-medium text-gray-700">
-              IEEE ID (optional)
+              IEEE ID <span className="text-gray-500 text-xs">(Optional)</span>
             </label>
             <input
               id="ieeeId"
@@ -127,14 +147,15 @@ export default function SignupPage() {
               type="text"
               value={formData.ieeeId}
               onChange={(e) => setFormData({ ...formData, ieeeId: e.target.value })}
-              className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-purple-500 focus:border-purple-500"
+              className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-purple-500 focus:border-purple-500 text-gray-900 placeholder:text-gray-400"
               placeholder="12345678"
             />
+            <p className="mt-1 text-xs text-gray-500">You can add this later from your profile</p>
           </div>
 
           <div>
             <label htmlFor="phone" className="block text-sm font-medium text-gray-700">
-              Phone (optional)
+              Phone <span className="text-gray-500 text-xs">(Optional)</span>
             </label>
             <input
               id="phone"
@@ -142,14 +163,14 @@ export default function SignupPage() {
               type="tel"
               value={formData.phone}
               onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-              className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-purple-500 focus:border-purple-500"
+              className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-purple-500 focus:border-purple-500 text-gray-900 placeholder:text-gray-400"
               placeholder="+94 77 123 4567"
             />
           </div>
 
           <div>
             <label htmlFor="password" className="block text-sm font-medium text-gray-700">
-              Password *
+              Password <span className="text-red-500">*</span>
             </label>
             <input
               id="password"
@@ -158,14 +179,15 @@ export default function SignupPage() {
               required
               value={formData.password}
               onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-              className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-purple-500 focus:border-purple-500"
+              className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-purple-500 focus:border-purple-500 text-gray-900 placeholder:text-gray-400"
               placeholder="••••••••"
             />
+            <p className="mt-1 text-xs text-gray-500">Minimum 6 characters</p>
           </div>
 
           <div>
             <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700">
-              Confirm Password *
+              Confirm Password <span className="text-red-500">*</span>
             </label>
             <input
               id="confirmPassword"
@@ -174,7 +196,7 @@ export default function SignupPage() {
               required
               value={formData.confirmPassword}
               onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
-              className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-purple-500 focus:border-purple-500"
+              className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-purple-500 focus:border-purple-500 text-gray-900 placeholder:text-gray-400"
               placeholder="••••••••"
             />
           </div>
