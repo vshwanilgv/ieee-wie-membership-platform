@@ -11,6 +11,7 @@ import {
   CheckSquare, 
   Bell, 
   Trophy, 
+  Shield,
   LogOut,
   Menu,
   X
@@ -29,6 +30,7 @@ const navItems: NavItem[] = [
   { name: 'My Profile', href: '/dashboard/profile', icon: User },
   { name: 'Contributions', href: '/dashboard/contributions', icon: Award },
   { name: 'Approvals', href: '/dashboard/approvals', icon: CheckSquare },
+  { name: 'Role Management', href: '/dashboard/roles', icon: Shield },
   { name: 'Leaderboard', href: '/dashboard/leaderboard', icon: Trophy },
   { name: 'Notifications', href: '/dashboard/notifications', icon: Bell },
 ]
