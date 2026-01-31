@@ -217,23 +217,10 @@ export default function ApprovalsPage() {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) throw new Error('Not authenticated')
 
-      // Debug: Log the contribution and user details
-      const contribution = contributions.find(c => c.id === contributionId)
-      console.log('Approving contribution:', {
-        contributionId,
-        currentUserId: user.id,
-        currentUserRole: userRole,
-        contributionMemberId: contribution?.member_id,
-        contributionStatus: contribution?.status
-      })
-
       const { data, error } = await supabase.rpc('approve_contribution', {
         contribution_id: contributionId,
         approver_user_id: user.id
       })
-
-      console.log('Approve result:', data)
-      console.log('Approve error:', error)
 
       if (error) throw error
 
@@ -257,25 +244,11 @@ export default function ApprovalsPage() {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) throw new Error('Not authenticated')
 
-      // Debug: Log the contribution and user details
-      const contribution = contributions.find(c => c.id === contributionId)
-      console.log('Rejecting contribution:', {
-        contributionId,
-        currentUserId: user.id,
-        currentUserRole: userRole,
-        contributionMemberId: contribution?.member_id,
-        contributionStatus: contribution?.status,
-        rejectionReason: reason
-      })
-
       const { data, error } = await supabase.rpc('reject_contribution', {
         contribution_id: contributionId,
         approver_user_id: user.id,
         reason: reason
       })
-
-      console.log('Reject result:', data)
-      console.log('Reject error:', error)
 
       if (error) throw error
 
